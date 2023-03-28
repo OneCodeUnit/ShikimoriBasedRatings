@@ -14,10 +14,23 @@
     <Description>Пограмма для сравнения собственных оценок аниме с сообществом. Just for fun</Description>
     <RepositoryType>git</RepositoryType>
     <PackageTags>Shikimori; Anime; Watchlist; Ratings; Marks; Http parsing; Json parsing</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="LICENSE.txt">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Update="README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>
