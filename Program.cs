@@ -87,17 +87,17 @@
             }
             float basedIndex = sumAlt / UserDeltaDictionaryAlt.Count;
 
-            Console.WriteLine($"Аниме, которое больше всего не поняли вы - {JsonParse.UserTitleDictionary[mostHigh]} (разница оценок - {UserDeltaDictionaryAlt[mostHigh]})");
-            Console.WriteLine($"Аниме, которое больше всего не поняло сообщество - {JsonParse.UserTitleDictionary[mostLower]} (разница оценок - {UserDeltaDictionaryAlt[mostLower]})");
+            Console.WriteLine($"Аниме, которое больше всего не поняли вы - {JsonParse.UserTitleDictionary[mostHigh]} (разница оценок - {Math.Abs(UserDeltaDictionaryAlt[mostHigh])})");
+            Console.WriteLine($"Аниме, которое больше всего не поняло сообщество - {JsonParse.UserTitleDictionary[mostLower]} (разница оценок - {Math.Abs(UserDeltaDictionaryAlt[mostLower])})");
             Console.WriteLine($"Индекс базированности (относительный) - {basedIndex}");
 
             // Запись результатов в файл. Некрасиво. Стоит реализовать иначе.
             StreamWriter resultFile = new("anime.txt", false);
-            resultFile.WriteLine($"Больше всего ваше мнение совпадает с сообществом на этом аниме - {JsonParse.UserTitleDictionary[basedId]} (разница оценок - {Math.Abs(UserDeltaDictionary[basedId])})");
-            resultFile.WriteLine($"Больше всего вы не согласны с оценкой сообщества на этом аниме - {JsonParse.UserTitleDictionary[unbasedId]} (разница оценок - {Math.Abs(UserDeltaDictionary[unbasedId])})");
+            resultFile.WriteLine($"Больше всего ваше мнение совпадает с сообществом на этом аниме - {JsonParse.UserTitleDictionary[basedId]} (разница оценок - {UserDeltaDictionary[basedId]})");
+            resultFile.WriteLine($"Больше всего вы не согласны с оценкой сообщества на этом аниме - {JsonParse.UserTitleDictionary[unbasedId]} (разница оценок - {UserDeltaDictionary[unbasedId]})");
             resultFile.WriteLine($"Индекс базированности (абсолютный) - {basedIndexAbs}");
-            resultFile.WriteLine($"Аниме, которое больше всего не поняли вы - {JsonParse.UserTitleDictionary[mostHigh]} (разница оценок - {UserDeltaDictionaryAlt[mostHigh]})");
-            resultFile.WriteLine($"Аниме, которое больше всего не поняло сообщество - {JsonParse.UserTitleDictionary[mostLower]} (разница оценок - {UserDeltaDictionaryAlt[mostLower]})");
+            resultFile.WriteLine($"Аниме, которое больше всего не поняли вы - {JsonParse.UserTitleDictionary[mostHigh]} (разница оценок - {Math.Abs(UserDeltaDictionaryAlt[mostHigh])})");
+            resultFile.WriteLine($"Аниме, которое больше всего не поняло сообщество - {JsonParse.UserTitleDictionary[mostLower]} (разница оценок - {Math.Abs(UserDeltaDictionaryAlt[mostLower])})");
             resultFile.WriteLine($"Индекс базированности (относительный) - {basedIndex}");
             resultFile.Close();
             Console.WriteLine($"Результаты записаны в файл {Directory.GetCurrentDirectory()}\\anime.txt");
