@@ -1,10 +1,10 @@
-﻿namespace ShikimoriBasedRatings
+﻿namespace ShikimoriDatabaseCreate
 {
 #pragma warning disable IDE1006, CS8618
     public class UserRaitingsJson
     {
         public string target_title { get; set; }
-        public string target_id { get; set; }
+        public int target_id { get; set; }
         public string target_type { get; set; }
         public int score { get; set; }
         public string status { get; set; }
