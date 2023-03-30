@@ -4,8 +4,19 @@ namespace ShikimoriBasedRatings
 {
     internal class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
+            // Граница для исключения аниме со слишком низким количеством оценок
+            int border;
+            if (args.Length > 0)
+            {
+                border = Convert.ToInt32(args[0]);
+            }
+            else
+            {
+                border = 100;
+            }
+
             // Поиск файла с данными в текущей директории. Он начинается c имени пользователя
             string[] allFiles = Directory.GetFiles(Directory.GetCurrentDirectory(), "*_animes_database.json", SearchOption.TopDirectoryOnly);
             if (allFiles == null || allFiles.Length == 0)
@@ -20,10 +31,23 @@ namespace ShikimoriBasedRatings
             string json = File.ReadAllText(allFiles[0]);
             var userTitles = JsonSerializer.Deserialize<List<AnimeData>>(json);
 
-            // Сортировка по убыванию значений
-            var sortedList = userTitles;
-
+            var sortedList = new List<AnimeData>();
+            int countMarks = 0;
+            // Отбор значений
 #pragma warning disable CS8602 // Разыменование вероятной пустой ссылки.
+            foreach (var anime in userTitles)
+            {
+                countMarks = 0;
+                for (int i = 1; i < anime.CommunityScore.Length; i++)
+                {
+                    countMarks += anime.CommunityScore[i];
+                }
+                if (countMarks > border)
+                {
+                    sortedList.Add(anime);
+                }
+            }
+
             sortedList.Sort((x, y) => x.DeltaAbs.CompareTo(y.DeltaAbs));
             string stringDeltaAbsMin = $"Больше всего ваше мнение совпадает с сообществом на этом аниме - {sortedList[0].Title} (разница оценок - {Math.Round(sortedList[0].DeltaAbs, 2)})";
             string stringDeltaAbsMax = $"Больше всего вы не согласны с оценкой сообщества на этом аниме - {sortedList[^1].Title} (разница оценок - {Math.Round(sortedList[^1].DeltaAbs, 2)})";
@@ -50,10 +74,9 @@ namespace ShikimoriBasedRatings
             string stringDeltaBaseIndex = $"Индекс базированности (относительный) - {Math.Round(sum / sortedList.Count, 4)}";
 
             // Вычисление процента совпадения оценки с сообществом
-
             List<(int, float)> userScopePercentList = new();
             int count = 0;
-            foreach (var anime in userTitles)
+            foreach (var anime in sortedList)
             {
                 sum = 0;
                 for (int i = 1; i < anime.CommunityScore.Length; i++)
@@ -70,8 +93,8 @@ namespace ShikimoriBasedRatings
             }
 
             userScopePercentList.Sort((x, y) => x.Item2.CompareTo(y.Item2));
-            string stringPercentMin = $"Ваша оценка меньше всего соответствует сообществу у этого аниме  - {userTitles[userScopePercentList[0].Item1].Title} ({Math.Round(userScopePercentList[0].Item2, 4)}%)";
-            string stringPercentMax = $"Ваша оценка больше всего соответствует сообществу у этого аниме - {userTitles[userScopePercentList[^1].Item1].Title} ({Math.Round(userScopePercentList[^1].Item2, 4)}%)";
+            string stringPercentMin = $"Ваша оценка меньше всего соответствует сообществу у этого аниме  - {sortedList[userScopePercentList[0].Item1].Title} ({Math.Round(userScopePercentList[0].Item2, 4)}%)";
+            string stringPercentMax = $"Ваша оценка больше всего соответствует сообществу у этого аниме - {sortedList[userScopePercentList[^1].Item1].Title} ({Math.Round(userScopePercentList[^1].Item2, 4)}%)";
 
 #pragma warning restore CS8602 // Разыменование вероятной пустой ссылки.
             Console.WriteLine(stringDeltaAbsMin);

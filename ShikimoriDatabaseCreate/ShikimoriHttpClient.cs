@@ -9,7 +9,7 @@
             Client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:111.0) Gecko/20100101 Firefox/111.0");
         }
 
-        public static string GetShikimoriRating(int animeId, string animeTitle, byte maxRetry)
+        public static string GetShikimoriRating(int animeId, string animeTitle, int maxRetry)
         {
             // Попытка получить html-файл страницы аниме
             string url = $"https://shikimori.one/animes/{animeId}-{animeTitle}";
@@ -35,7 +35,7 @@
                 response = Client.GetAsync(newUrl).Result;
             }
             // Повторные попытки, если запрос не удался
-            byte retry = 0;
+            int retry = 0;
             while (!response.IsSuccessStatusCode)
             {
                 if (retry == maxRetry)

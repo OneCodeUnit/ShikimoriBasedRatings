@@ -4,8 +4,36 @@ namespace ShikimoriDatabaseCreate
 {
     internal class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
+            int delayMin, delayMax, maxRetry;
+            // Задержка перед следующим запросом
+            if (args[0] is not null)
+            {
+                delayMin = Convert.ToInt32(args[0]);
+            }
+            else
+            {
+                delayMin = 1200;
+            }
+            if (args[1] is not null)
+            {
+                delayMax = Convert.ToInt32(args[1]);
+            }
+            else
+            {
+                delayMax = 1800;
+            }
+            // Количество повторов
+            if (args[2] is not null)
+            {
+                maxRetry = Convert.ToInt32(args[2]);
+            }
+            else
+            {
+                maxRetry = 1;
+            }
+
             // Поиск файла с данными пользователя в текущей директории. Он начинается c имени пользователя
             string[] allFiles = Directory.GetFiles(Directory.GetCurrentDirectory(), "*_animes.json", SearchOption.TopDirectoryOnly);
             if (allFiles == null || allFiles.Length == 0)
@@ -32,10 +60,6 @@ namespace ShikimoriDatabaseCreate
             // Значения, сгруппированные: ид аниме - оценки пользователей
             Dictionary<int, int[]> UserCommunityScoreDictionary = new();
 
-            // 3 параметра для вынесения настройки
-            int delayMin = 1200;
-            int delayMax = 1800;
-            byte maxRetry = 1;
             int iter = 0;
             //int breakIter = 100;
             int errorIter = 0;
