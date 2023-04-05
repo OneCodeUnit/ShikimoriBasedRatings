@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace ShikimoriDatabaseCreate
 {
@@ -34,29 +35,16 @@ namespace ShikimoriDatabaseCreate
 
         private static void CreateTitleUrl()
         {
+            string pattern1 = @"[,!?\(\)\[\]\p{M}]";
+            string pattern2 = @" - |: |;| |\.|\+|/|—|\\| & |---|--";
+            Regex regex1 = new (pattern1);
+            Regex regex2 = new (pattern2);
             foreach (var anime in UserTitleDictionary)
             {
-                string title = anime.Value;
+                string title = anime.Value.ToLower();
                 // Найденные эмпирически правила преобразования названия аниме в адресную строку.
-                title = title.ToLower();
-                title = title.Replace(" - ", "-");
-                title = title.Replace(": ", "-");
-                title = title.Replace(' ', '-');
-                title = title.Replace('.', '-');
-                title = title.Replace('+', '-');
-                title = title.Replace('/', '-');
-                title = title.Replace('—', '-');
-                title = title.Replace('\'', '-');
-                title = title.Replace(" & ", "-");
-                title = title.Replace(",", string.Empty);
-                title = title.Replace("!", string.Empty);
-                title = title.Replace("?", string.Empty);
-                title = title.Replace("(", string.Empty);
-                title = title.Replace(")", string.Empty);
-                title = title.Replace("[", string.Empty);
-                title = title.Replace("]", string.Empty);
-                title = title.Replace("---", "-");
-                title = title.Replace("--", "-");
+                title = regex1.Replace(title, string.Empty);
+                title = regex2.Replace(title, "-");
 
                 UserTitleUrlDictionary.Add(anime.Key, title);
             }
@@ -64,35 +52,11 @@ namespace ShikimoriDatabaseCreate
 
         public static float ShikimoriRating(string json)
         {
-            // Вычленение из http-файла оценки. Обойтись без нормального парсера - действительно хорошая идея?
-            int index = json.IndexOf("ratingValue") - 12;
-            float result;
-            // Оценка указывается с точностью до двух знаков после запятой. Если на конце 0, то размер оценки уменьшается
-            try
-            {
-                string raiting = json.Substring(index - 4, 4);
-                result = Convert.ToSingle(raiting, CultureInfo.InvariantCulture);
-            }
-            catch
-            {
-                try
-                {
-                    string raiting = json.Substring(index - 3, 3);
-                    result = Convert.ToSingle(raiting, CultureInfo.InvariantCulture);
-                }
-                catch
-                {
-                    try
-                    {
-                        string raiting = json.Substring(index - 1, 1);
-                        result = Convert.ToSingle(raiting, CultureInfo.InvariantCulture);
-                    }
-                    catch
-                    {
-                        return -1;
-                    }
-                }
-            }
+            // Вычленение из http-файла оценки.
+            string pattern = @"<.*meta content=(.*)itemprop=.*ratingValue.*/>";
+            Match m = Regex.Match(json, pattern);
+            string mark = m.Groups[1].Value[1..^2];
+            float result = Convert.ToSingle(mark, CultureInfo.InvariantCulture);
             return result;
         }
 
@@ -100,21 +64,13 @@ namespace ShikimoriDatabaseCreate
         {
             int[] communityRating = new int[11];
             // Вычленение из http-файла оценок пользователей
-            int indexStart = json.IndexOf("data-stats") + 13;
-            int indexEnd = json.IndexOf("rates_scores_stats") - 7;
-            string raiting = string.Empty;
-            try
-            {
-                raiting = json[indexStart..indexEnd];
-            }
-            catch
-            {
-                communityRating[0] = -1;
-            }
+            string pattern = @".*data-stats=(.*)\s*id=.rates_scores_stats";
+            Match m = Regex.Match(json, pattern);
+            string raiting = m.Groups[1].Value[2..^2];
             // Удаление лишних символов
-            raiting = raiting.Replace("&quot;", string.Empty);
-            raiting = raiting.Replace("[", string.Empty);
-            raiting = raiting.Replace("]", string.Empty);
+            pattern = @"&quot;|\[|\]";
+            raiting = Regex.Replace(raiting, pattern, string.Empty);
+
             string[] raitings = raiting.Split(',');
             // Для удобства индекс массива используется в качестве номера оценки, значение яцейки - количество этих оценок
             for (int i = 0; i < raitings.Length; i++)

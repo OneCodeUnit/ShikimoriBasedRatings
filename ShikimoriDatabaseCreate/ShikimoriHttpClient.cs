@@ -1,4 +1,6 @@
-﻿namespace ShikimoriDatabaseCreate
+﻿using System.Text.RegularExpressions;
+
+namespace ShikimoriDatabaseCreate
 {
     public class ShikimoriHttpClient
     {
@@ -20,12 +22,12 @@
             if (response.StatusCode.ToString().Equals("NotFound"))
             {
                 page = response.Content.ReadAsStringAsync().Result;
-                int startIndex = page.IndexOf("доступна") + 21;
-                int endIndex = page.IndexOf("новой") - 2;
+                string pattern = @".*<a\s*href=(.*)>.*</a>";
+                Match m = Regex.Match(page, pattern);
                 string newUrl;
                 try
                 {
-                    newUrl = page[startIndex..endIndex];
+                    newUrl = m.Groups[1].Value[1..^1];
                 }
                 catch
                 {

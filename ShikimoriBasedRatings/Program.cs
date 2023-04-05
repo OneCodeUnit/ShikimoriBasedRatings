@@ -7,14 +7,10 @@ namespace ShikimoriBasedRatings
         static void Main(string[] args)
         {
             // Граница для исключения аниме со слишком низким количеством оценок
-            int border;
+            int border = 100;
             if (args.Length > 0)
             {
                 border = Convert.ToInt32(args[0]);
-            }
-            else
-            {
-                border = 100;
             }
 
             // Поиск файла с данными в текущей директории. Он начинается c имени пользователя

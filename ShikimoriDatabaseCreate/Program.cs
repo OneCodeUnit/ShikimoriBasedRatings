@@ -6,32 +6,26 @@ namespace ShikimoriDatabaseCreate
     {
         static void Main(string[] args)
         {
-            int delayMin, delayMax, maxRetry;
             // Задержка перед следующим запросом
-            if (args[0] is not null)
-            {
-                delayMin = Convert.ToInt32(args[0]);
-            }
-            else
-            {
-                delayMin = 1200;
-            }
-            if (args[1] is not null)
-            {
-                delayMax = Convert.ToInt32(args[1]);
-            }
-            else
-            {
-                delayMax = 1800;
-            }
+            int delayMin = 1200;
+            int delayMax = 1800;
             // Количество повторов
-            if (args[2] is not null)
+            int maxRetry = 1;
+
+            if (args.Length > 0)
             {
-                maxRetry = Convert.ToInt32(args[2]);
-            }
-            else
-            {
-                maxRetry = 1;
+                if (args[0] is not null)
+                {
+                    delayMin = Convert.ToInt32(args[0]);
+                }
+                if (args[1] is not null)
+                {
+                    delayMax = Convert.ToInt32(args[1]);
+                }
+                if (args[2] is not null)
+                {
+                    maxRetry = Convert.ToInt32(args[2]);
+                }
             }
 
             // Поиск файла с данными пользователя в текущей директории. Он начинается c имени пользователя
@@ -85,14 +79,14 @@ namespace ShikimoriDatabaseCreate
                     continue;
                 }
                 float onlineRating = JsonParse.ShikimoriRating(page);
-                // Если так и не получилось найти оценку
-                if (onlineRating == -1)
-                {
-                    Console.WriteLine($"{name} - Error (rating). {iter}/{maxIter}");
-                    iter++;
-                    errorIter++;
-                    continue;
-                }
+                //// Если так и не получилось найти оценку
+                //if (onlineRating == -1)
+                //{
+                //    Console.WriteLine($"{name} - Error (rating). {iter}/{maxIter}");
+                //    iter++;
+                //    errorIter++;
+                //    continue;
+                //}
                 // Если так и не получилось найти оценки пользователей
                 int[] onlineCommunityRating = JsonParse.ShikimoriCommunityRating(page);
                 if (onlineCommunityRating[0] == -1)
