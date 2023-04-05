@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
     <StartupObject>ShikimoriBasedRatings.Program</StartupObject>
     <PlatformTarget>AnyCPU</PlatformTarget>
-    <Version>$(VersionPrefix)2.0.1</Version>
+    <Version>2.0.1</Version>
     <Authors>OliveWizard</Authors>
     <Company>OliveWizard</Company>
     <Product>Shikimori Based Ratings</Product>
