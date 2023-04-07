@@ -1,4 +1,4 @@
-﻿namespace ShikimoriDatabaseCreate
+﻿namespace ShikimoriDatabaseCreate.JsonClasses.Program
 {
     public class AnimeTitle
     {

@@ -1,4 +1,8 @@
-﻿using System.Text.Json;
+﻿using ShikimoriDatabaseCreate.JsonClasses.Anime;
+using ShikimoriDatabaseCreate.JsonClasses.List;
+using ShikimoriDatabaseCreate.JsonClasses.Program;
+using System.Globalization;
+using System.Text.Json;
 
 namespace ShikimoriDatabaseCreate
 {
@@ -6,119 +10,106 @@ namespace ShikimoriDatabaseCreate
     {
         static void Main(string[] args)
         {
-            // Задержка перед следующим запросом
-            int delayMin = 1200;
-            int delayMax = 1800;
-            // Количество повторов
-            int maxRetry = 1;
-
+            // Получение ид пользователя по вводимому нику
+            string? nickname = string.Empty;
+            int userId = 0;
             if (args.Length > 0)
             {
                 if (args[0] is not null)
                 {
-                    delayMin = Convert.ToInt32(args[0]);
-                }
-                if (args[1] is not null)
-                {
-                    delayMax = Convert.ToInt32(args[1]);
-                }
-                if (args[2] is not null)
-                {
-                    maxRetry = Convert.ToInt32(args[2]);
+                    nickname = args[0];
+                    userId = ShikimoriHttpClient.CheckUser(nickname);
                 }
             }
-
-            // Поиск файла с данными пользователя в текущей директории. Он начинается c имени пользователя
-            string[] allFiles = Directory.GetFiles(Directory.GetCurrentDirectory(), "*_animes.json", SearchOption.TopDirectoryOnly);
-            if (allFiles == null || allFiles.Length == 0)
+            if (userId == -1)
             {
-                Console.WriteLine("Файл с данными пользователя не найден");
+                Console.WriteLine("Пользователь не найден");
+            }
+            if (userId < 1)
+            {
+                do
+                {
+                    Console.WriteLine("Введите имя пользователя:");
+                    nickname = Console.ReadLine();
+                    if (nickname is null)
+                        userId = -1;
+                    else
+                        userId = ShikimoriHttpClient.CheckUser(nickname);
+                }
+                while (userId < 1);
+            }
+
+            // Получение данных пользователя
+            string userData = ShikimoriHttpClient.GetUserRatings(userId);
+            if (userData.StartsWith("Error"))
+            {
+                Console.WriteLine(userData);
                 return;
             }
-            else
-            {
-                Console.WriteLine($"Загружен файл с данными пользователя: {allFiles[0]}");
-            }
-            JsonParse.CreateUserData(allFiles[0]);
+            Console.WriteLine($"Данные пользователя {nickname} получены");
+            var json = JsonSerializer.Deserialize<List<ShikimoriListJson>>(userData);
 
-            // Значения, сгруппированные: ид аниме - твоя оценка
-            Dictionary<int, int> UserScopeDictionary = new(JsonParse.UserScopeDictionary);
-            // Значения, сгруппированные: ид аниме - его название
-            Dictionary<int, string> UserTitleDictionary = new(JsonParse.UserTitleDictionary);
-            // Значения, сгруппированные: ид аниме - его название для адреса страницы
-            Dictionary<int, string> UserTitleUrlDictionary = new(JsonParse.UserTitleUrlDictionary);
-            // Значения, сгруппированные: ид аниме - разница оценок (абсолютная)
-            Dictionary<int, float> UserDeltaDictionary = new();
-            // Значения, сгруппированные: ид аниме - разница оценок
-            Dictionary<int, float> UserDeltaDictionaryAlt = new();
-            // Значения, сгруппированные: ид аниме - оценки пользователей
-            Dictionary<int, int[]> UserCommunityScoreDictionary = new();
-
+#pragma warning disable CS8602, CS8600
             int iter = 0;
-            //int breakIter = 100;
             int errorIter = 0;
-            int maxIter = UserTitleDictionary.Count;
-            double estimatedTime = Math.Round((double)maxIter * (delayMin + delayMax / 2) / 60000);
+            int maxIter = json.Count;
+            int delayMin = 400;
+            int delayMax = 600;
             List<AnimeTitle> titles = new();
-            Console.WriteLine($"Наберитесь терпения, создание данных займёт примерно {estimatedTime} мин.");
-            foreach (var anime in UserTitleDictionary)
-            {
-                //if (iter == breakIter)
-                //{
-                //    break;
-                //}
-                int id = anime.Key;
-                string name = anime.Value;
-                string page = ShikimoriHttpClient.GetShikimoriRating(id, UserTitleUrlDictionary[id], maxRetry);
-                // Если так и не получилось получить html
-                if (page.Equals("error"))
-                {
-                    Console.WriteLine($"{name} - Error (get). {iter}/{maxIter}");
-                    iter++;
-                    errorIter++;
-                    continue;
-                }
-                float onlineRating = JsonParse.ShikimoriRating(page);
-                //// Если так и не получилось найти оценку
-                //if (onlineRating == -1)
-                //{
-                //    Console.WriteLine($"{name} - Error (rating). {iter}/{maxIter}");
-                //    iter++;
-                //    errorIter++;
-                //    continue;
-                //}
-                // Если так и не получилось найти оценки пользователей
-                int[] onlineCommunityRating = JsonParse.ShikimoriCommunityRating(page);
-                if (onlineCommunityRating[0] == -1)
-                {
-                    Console.WriteLine($"{name} - Error (community rating). {iter}/{maxIter}");
-                    iter++;
-                    errorIter++;
-                    continue;
-                }
-                UserCommunityScoreDictionary.Add(id, onlineCommunityRating);
-                int youRating = UserScopeDictionary[id];
-                float delta = Math.Abs(onlineRating - youRating);
-                float deltaAlt = youRating - onlineRating;
-                UserDeltaDictionary.Add(id, delta);
-                UserDeltaDictionaryAlt.Add(id, deltaAlt);
-                AnimeTitle title = new(id, UserScopeDictionary[id], UserTitleDictionary[id], UserDeltaDictionary[id], UserDeltaDictionaryAlt[id], UserCommunityScoreDictionary[id]);
-                titles.Add(title);
-                iter++;
-                Console.WriteLine($"{name} - OK. {iter}/{maxIter}");
-                // Поскольку сайт очень болезненно относится к подобным запросам, после каждого запроса берётся случайная пауза
-                Random rand = new();
-                int delay = rand.Next(delayMin, delayMax);
-                Thread.Sleep(delay);
-            }
 
-            Console.WriteLine($"Данные созданы. Ошибок: {errorIter}");
-            string dataFile = allFiles[0][..^5] + "_database.json";
+            double estimatedTime = Math.Round((double)maxIter * delayMax / 60000);
+            Console.WriteLine($"В статистику можно добавить оценки пользователей, но это займёт до {estimatedTime} минут времени. Добавить? [y/n]");
+            string answer = Console.ReadLine();
+            bool mode = false;
+            if (answer.Equals("y") || answer.Equals("д") || answer.Equals("н"))
+                mode = true;
+
+
+            foreach (var anime in json)
+            {
+                float onlineRating = Convert.ToSingle(anime.anime.score, CultureInfo.InvariantCulture);
+                float delta = Math.Abs(anime.score - onlineRating);
+                float deltaAlt = anime.score - onlineRating;
+                AnimeTitle title;
+                if (mode)
+                {
+                    string communityData = ShikimoriHttpClient.GetCommunityRatings(anime.anime.id);
+                    if (communityData.StartsWith("Error"))
+                    {
+                        Console.WriteLine(communityData);
+                        iter++;
+                        errorIter++;
+                        continue;
+                    }
+                    var data = JsonSerializer.Deserialize<ShikimoriAnimeJson>(communityData);
+                    List<RatesScoresStat> scopes = new(data.rates_scores_stats);
+                    int[] communityScore = new int[11];
+                    foreach (var scope in scopes)
+                    {
+                        communityScore[scope.name] = scope.value;
+                    }
+                    title = new(anime.anime.id, anime.score, anime.anime.name, delta, deltaAlt, communityScore);
+                    iter++;
+                    Console.WriteLine($"{anime.anime.name} - OK. {iter}/{maxIter}");
+                    Random rand = new();
+                    int delay = rand.Next(delayMin, delayMax);
+                    Thread.Sleep(delay);
+                }
+                else
+                {
+                    title = new(anime.anime.id, anime.score, anime.anime.name, delta, deltaAlt, Array.Empty<int>());
+                }
+                titles.Add(title);
+            }
+#pragma warning restore CS8602, CS8600
+
+            Console.WriteLine($"Данные созданы. Ошибок {errorIter}. Обработано {json.Count} аниме");
+            string dataFile = nickname + "_database.json";
             StreamWriter sw = new(dataFile, false);
             sw.Write(JsonSerializer.Serialize(titles));
             sw.Close();
-            Console.WriteLine($"Созданы данные по адресу: {dataFile}");
-            Console.WriteLine("Нажмите любую клаивишу для закрытия окна");
+            Console.WriteLine($"Данные записаны в файл: {Directory.GetCurrentDirectory()}\\{dataFile}");
+            Console.WriteLine("Нажмите любую клавишу для закрытия окна");
             Console.ReadKey();
         }
     }

@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using ShikimoriDatabaseCreate.JsonClasses.User;
+using System.Text.Json;
 
 namespace ShikimoriDatabaseCreate
 {
@@ -11,48 +12,44 @@ namespace ShikimoriDatabaseCreate
             Client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:111.0) Gecko/20100101 Firefox/111.0");
         }
 
-        public static string GetShikimoriRating(int animeId, string animeTitle, int maxRetry)
+        public static int CheckUser(string user)
         {
-            // Попытка получить html-файл страницы аниме
-            string url = $"https://shikimori.one/animes/{animeId}-{animeTitle}";
-            //string url = $"https://shikimori.one/animes/34134-one-punch-man-2nd-season";
+            string url = $"https://shikimori.one/api/users/{user}/?is_nickname=1";
             HttpResponseMessage response = Client.GetAsync(url).Result;
-            // У некоторых выдаётся ошибка 404 и стоит перенаправление на страницу с другим ид (который имеет букву в начале, но я не уверен, что так всегда)
-            string page;
-            if (response.StatusCode.ToString().Equals("NotFound"))
+            if (!response.IsSuccessStatusCode) return -1;
+            string data = response.Content.ReadAsStringAsync().Result;
+            var json = JsonSerializer.Deserialize<ShikimoriUserJson>(data);
+            if (json == null) return -1;
+            return json.id;
+        }
+
+        public static string GetUserRatings(int id)
+        {
+            string url = $"https://shikimori.one/api/users/{id}/anime_rates?censored=false&status=completed&limit=2000";
+            HttpResponseMessage response = Client.GetAsync(url).Result;
+            if (!response.IsSuccessStatusCode) return $"Error {response.StatusCode}";
+            string data = response.Content.ReadAsStringAsync().Result;
+            if (data is null) return $"Error нет данных";
+            return data;
+        }
+
+        public static string GetCommunityRatings(int id)
+        {
+            string url = $"https://shikimori.one/api/animes/{id}";
+            HttpResponseMessage response = Client.GetAsync(url).Result;
+            if (!response.IsSuccessStatusCode)
             {
-                page = response.Content.ReadAsStringAsync().Result;
-                string pattern = @".*<a\s*href=(.*)>.*</a>";
-                Match m = Regex.Match(page, pattern);
-                string newUrl;
-                try
-                {
-                    newUrl = m.Groups[1].Value[1..^1];
-                }
-                catch
-                {
-                    // Если это реальная 404
-                    newUrl = url;
-                }
-                response = Client.GetAsync(newUrl).Result;
-            }
-            // Повторные попытки, если запрос не удался
-            int retry = 0;
-            while (!response.IsSuccessStatusCode)
-            {
-                if (retry == maxRetry)
-                {
-                    return "error";
-                }
                 Random rand = new();
                 int delay = rand.Next(10000, 15000);
                 Console.WriteLine($"Ошибка {response.StatusCode}. Повторная попытка через {delay / 1000} сек. Проблема с адресом {url}");
                 Thread.Sleep(delay);
                 response = Client.GetAsync(url).Result;
-                retry++;
+                if (!response.IsSuccessStatusCode)
+                    return $"Error {response.StatusCode}";
             }
-            page = response.Content.ReadAsStringAsync().Result;
-            return page;
+            string data = response.Content.ReadAsStringAsync().Result;
+            if (data is null) return $"Error нет данных";
+            return data;
         }
     }
 }
