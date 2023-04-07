@@ -67,6 +67,12 @@ namespace ShikimoriDatabaseCreate
 
             foreach (var anime in json)
             {
+                if (anime.score == 0)
+                {
+                    iter++;
+                    Console.WriteLine($"{anime.anime.name} - Skip. {iter}/{maxIter}");
+                    continue;
+                }
                 float onlineRating = Convert.ToSingle(anime.anime.score, CultureInfo.InvariantCulture);
                 float delta = Math.Abs(anime.score - onlineRating);
                 float deltaAlt = anime.score - onlineRating;
