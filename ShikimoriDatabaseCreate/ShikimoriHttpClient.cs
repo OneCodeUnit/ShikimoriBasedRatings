@@ -14,7 +14,7 @@ namespace ShikimoriDatabaseCreate
 
         public static int CheckUser(string user)
         {
-            string url = $"https://shikimori.one/api/users/{user}/?is_nickname=1";
+            string url = $"https://shikimori.me/api/users/{user}/?is_nickname=1";
             HttpResponseMessage response = Client.GetAsync(url).Result;
             if (!response.IsSuccessStatusCode) return -1;
             string data = response.Content.ReadAsStringAsync().Result;
@@ -25,30 +25,30 @@ namespace ShikimoriDatabaseCreate
 
         public static string GetUserRatings(int id)
         {
-            string url = $"https://shikimori.one/api/users/{id}/anime_rates?censored=false&status=completed&limit=2000";
+            string url = $"https://shikimori.me/api/users/{id}/anime_rates?censored=false&status=completed&limit=2000";
             HttpResponseMessage response = Client.GetAsync(url).Result;
-            if (!response.IsSuccessStatusCode) return $"Error {response.StatusCode}";
+            if (!response.IsSuccessStatusCode) return $"Error {response.StatusCode} ({response.ReasonPhrase})";
             string data = response.Content.ReadAsStringAsync().Result;
-            if (data is null) return $"Error нет данных";
+            if (data is null) return $"Error 0 (Данные отсутствуют)";
             return data;
         }
 
         public static string GetCommunityRatings(int id)
         {
-            string url = $"https://shikimori.one/api/animes/{id}";
+            string url = $"https://shikimori.me/api/animes/{id}";
             HttpResponseMessage response = Client.GetAsync(url).Result;
             if (!response.IsSuccessStatusCode)
             {
                 Random rand = new();
                 int delay = rand.Next(10000, 15000);
-                Console.WriteLine($"Ошибка {response.StatusCode}. Повторная попытка через {delay / 1000} сек. Проблема с адресом {url}");
+                Console.WriteLine($"Ошибка {response.StatusCode} ({response.ReasonPhrase}). Повторная попытка через {delay / 1000} сек. Проблема с адресом {url}");
                 Thread.Sleep(delay);
                 response = Client.GetAsync(url).Result;
                 if (!response.IsSuccessStatusCode)
-                    return $"Error {response.StatusCode}";
+                    return $"Error {response.StatusCode} ({response.ReasonPhrase})";
             }
             string data = response.Content.ReadAsStringAsync().Result;
-            if (data is null) return $"Error нет данных";
+            if (data is null) return $"Error 0 (Данные отсутствуют)";
             return data;
         }
     }
